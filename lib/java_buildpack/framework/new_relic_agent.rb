@@ -65,7 +65,7 @@ module JavaBuildpack
       def apply_configuration(credentials, configuration)
         configuration['log_file_name'] = 'STDOUT'
         configuration[LICENSE_KEY_USER] = credentials[LICENSE_KEY]
-        configuration['app_name'] = @application.details['application_name'] + ' (' + @application.details['space_name'] + ')'
+        configuration['app_name'] = @application.details['application_name'] + '_' + @application.details['space_name']
       end
 
       def apply_user_configuration(credentials, configuration)

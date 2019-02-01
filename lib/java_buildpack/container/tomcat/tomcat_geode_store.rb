@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2017 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,6 +30,7 @@ module JavaBuildpack
       # (see JavaBuildpack::Component::BaseComponent#compile)
       def compile
         return unless supports?
+
         download_tar(false, tomcat_lib, tar_name)
         mutate_context
         mutate_server
@@ -37,10 +40,11 @@ module JavaBuildpack
       # (see JavaBuildpack::Component::BaseComponent#release)
       def release
         return unless supports?
-        credentials = @application.services.find_service(FILTER)['credentials']
-        user = credentials[KEY_USERS].find { |u| u['username'] == 'cluster_operator' }
 
-        @droplet.java_opts.add_system_property 'gemfire.security-username', 'cluster_operator'
+        credentials = @application.services.find_service(FILTER, KEY_LOCATORS, KEY_USERS)['credentials']
+        user = credentials[KEY_USERS].find { |u| cluster_operator?(u) }
+
+        @droplet.java_opts.add_system_property 'gemfire.security-username', user['username']
         @droplet.java_opts.add_system_property 'gemfire.security-password', user['password']
         @droplet.java_opts.add_system_property 'gemfire.security-client-auth-init',
                                                'io.pivotal.cloudcache.ClientAuthInitialize.create'
@@ -55,17 +59,17 @@ module JavaBuildpack
 
       private
 
-      FILTER = /session-replication/
-      KEY_LOCATORS = 'locators'.freeze
-      KEY_USERS = 'users'.freeze
+      FILTER = /session-replication/.freeze
+      KEY_LOCATORS = 'locators'
+      KEY_USERS = 'users'
 
-      SESSION_MANAGER_CLASS_NAME = 'org.apache.geode.modules.session.catalina.Tomcat8DeltaSessionManager'.freeze
-      REGION_ATTRIBUTES_ID = 'PARTITION_REDUNDANT_HEAP_LRU'.freeze
+      SESSION_MANAGER_CLASS_NAME = 'org.apache.geode.modules.session.catalina.Tomcat8DeltaSessionManager'
+      REGION_ATTRIBUTES_ID = 'PARTITION_REDUNDANT_HEAP_LRU'
       CACHE_CLIENT_LISTENER_CLASS_NAME =
-        'org.apache.geode.modules.session.catalina.ClientServerCacheLifecycleListener'.freeze
-      SCHEMA_URL = 'http://geode.apache.org/schema/cache'.freeze
-      SCHEMA_INSTANCE_URL = 'http://www.w3.org/2001/XMLSchema-instance'.freeze
-      SCHEMA_LOCATION = 'http://geode.apache.org/schema/cache http://geode.apache.org/schema/cache/cache-1.0.xsd'.freeze
+        'org.apache.geode.modules.session.catalina.ClientServerCacheLifecycleListener'
+      SCHEMA_URL = 'http://geode.apache.org/schema/cache'
+      SCHEMA_INSTANCE_URL = 'http://www.w3.org/2001/XMLSchema-instance'
+      SCHEMA_LOCATION = 'http://geode.apache.org/schema/cache http://geode.apache.org/schema/cache/cache-1.0.xsd'
       LOCATOR_REGEXP = Regexp.new('([^\\[]+)\\[([^\\]]+)\\]').freeze
       FUNCTION_SERVICE_CLASS_NAMES = [
         'org.apache.geode.modules.util.CreateRegionFunction',
@@ -77,6 +81,10 @@ module JavaBuildpack
       private_constant :FILTER, :KEY_LOCATORS, :KEY_USERS, :SESSION_MANAGER_CLASS_NAME, :REGION_ATTRIBUTES_ID,
                        :CACHE_CLIENT_LISTENER_CLASS_NAME, :SCHEMA_URL, :SCHEMA_INSTANCE_URL, :SCHEMA_LOCATION,
                        :LOCATOR_REGEXP, :FUNCTION_SERVICE_CLASS_NAMES
+
+      def cluster_operator?(user)
+        user['username'] == 'cluster_operator' || user['roles'] && (user['roles'].include? 'cluster_operator')
+      end
 
       def add_client_cache(document)
         client_cache = document.add_element 'client-cache',
@@ -108,7 +116,7 @@ module JavaBuildpack
       end
 
       def add_locators(pool)
-        service = @application.services.find_service FILTER
+        service = @application.services.find_service FILTER, KEY_LOCATORS, KEY_USERS
         service['credentials']['locators'].each do |locator|
           match_info = LOCATOR_REGEXP.match(locator)
           pool.add_element 'locator',
@@ -149,7 +157,7 @@ module JavaBuildpack
         puts '       Adding Geode-based Session Replication'
 
         document = read_xml context_xml
-        context  = REXML::XPath.match(document, '/Context').first
+        context = REXML::XPath.match(document, '/Context').first
 
         add_manager context
 
@@ -159,7 +167,7 @@ module JavaBuildpack
       def mutate_server
         document = read_xml server_xml
 
-        server   = REXML::XPath.match(document, '/Server').first
+        server = REXML::XPath.match(document, '/Server').first
 
         add_listener server
 

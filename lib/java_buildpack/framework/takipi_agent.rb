@@ -1,6 +1,7 @@
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-#
-# Copyright 2013-2017 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,7 +46,7 @@ module JavaBuildpack
                 .add_environment_variable('TAKIPI_HOME', @droplet.sandbox)
                 .add_environment_variable('TAKIPI_MACHINE_NAME', node_name)
 
-        config_env_vars @application.services.find_service(FILTER)['credentials']
+        config_env_vars @application.services.find_service(FILTER, [SECRET_KEY, COLLECTOR_HOST])['credentials']
       end
 
       protected
@@ -57,11 +58,11 @@ module JavaBuildpack
 
       private
 
-      COLLECTOR_HOST = 'collector_host'.freeze
+      COLLECTOR_HOST = 'collector_host'
 
-      FILTER = /takipi/
+      FILTER = /takipi/.freeze
 
-      SECRET_KEY = 'secret_key'.freeze
+      SECRET_KEY = 'secret_key'
 
       private_constant :COLLECTOR_HOST, :FILTER, :SECRET_KEY
 

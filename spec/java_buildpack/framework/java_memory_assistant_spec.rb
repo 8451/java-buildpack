@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2017 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +24,7 @@ require 'java_buildpack/framework/java_memory_assistant/clean_up'
 require 'java_buildpack/framework/java_memory_assistant/heap_dump_folder'
 
 describe JavaBuildpack::Framework::JavaMemoryAssistant do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   let(:component) { StubJavaMemoryAssistant.new context }
 
@@ -35,7 +37,7 @@ describe JavaBuildpack::Framework::JavaMemoryAssistant do
     end
 
     it 'does not activate submodules if it is disabled in the configuration' do
-      expect(component.detect).not_to be
+      expect(component.detect).not_to be_truthy
     end
 
   end
@@ -43,9 +45,9 @@ describe JavaBuildpack::Framework::JavaMemoryAssistant do
   context do
 
     let(:configuration) do
-      { 'enabled'   => true,
-        'agent'     => agent_configuration,
-        'clean_up'  => clean_up_configuration }
+      { 'enabled' => true,
+        'agent' => agent_configuration,
+        'clean_up' => clean_up_configuration }
     end
 
     let(:agent_configuration) { instance_double('agent_configuration') }

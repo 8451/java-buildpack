@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2017 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,9 +25,9 @@ require 'java_buildpack/util/cache/download_cache'
 require 'net/http'
 
 describe JavaBuildpack::Util::Cache::DownloadCache do
-  include_context 'application_helper'
-  include_context 'internet_availability_helper'
-  include_context 'logging_helper'
+  include_context 'with application help'
+  include_context 'with internet availability help'
+  include_context 'with logging help'
 
   let(:ca_certs_directory) { instance_double('Pathname', exist?: false, to_s: 'test-path') }
 
@@ -39,7 +41,11 @@ describe JavaBuildpack::Util::Cache::DownloadCache do
 
   let(:uri_secure) { 'https://foo-uri/' }
 
-  let(:download_cache) { described_class.new(mutable_cache_root, immutable_cache_root) }
+  let(:download_cache) do
+    download_cache = described_class.new(mutable_cache_root, immutable_cache_root)
+    download_cache.retry_max = 0
+    download_cache
+  end
 
   before do
     described_class.const_set :CA_FILE, ca_certs_directory
@@ -162,8 +168,8 @@ describe JavaBuildpack::Util::Cache::DownloadCache do
 
   it 'discards content with incorrect size' do
     stub_request(:get, uri)
-      .to_return(status: 200, body: 'foo-cac', headers: { Etag:            'foo-etag',
-                                                          'Last-Modified'  => 'foo-last-modified',
+      .to_return(status: 200, body: 'foo-cac', headers: { Etag: 'foo-etag',
+                                                          'Last-Modified' => 'foo-last-modified',
                                                           'Content-Length' => 10 })
 
     touch immutable_cache_root, 'cached', 'old-foo-cached'
@@ -173,10 +179,10 @@ describe JavaBuildpack::Util::Cache::DownloadCache do
 
   it 'ignores incorrect size when encoded' do
     stub_request(:get, uri)
-      .to_return(status: 200, body: 'foo-cac', headers: { Etag:              'foo-etag',
+      .to_return(status: 200, body: 'foo-cac', headers: { Etag: 'foo-etag',
                                                           'Content-Encoding' => 'gzip',
-                                                          'Last-Modified'    => 'foo-last-modified',
-                                                          'Content-Length'   => 10 })
+                                                          'Last-Modified' => 'foo-last-modified',
+                                                          'Content-Length' => 10 })
 
     touch immutable_cache_root, 'cached', 'old-foo-cached'
 
@@ -189,7 +195,7 @@ describe JavaBuildpack::Util::Cache::DownloadCache do
 
     it 'uses http_proxy if specified' do
       stub_request(:get, uri)
-        .to_return(status: 200, body: 'foo-cached', headers: { Etag:           'foo-etag',
+        .to_return(status: 200, body: 'foo-cached', headers: { Etag: 'foo-etag',
                                                                'Last-Modified' => 'foo-last-modified' })
 
       allow(Net::HTTP).to receive(:Proxy).and_call_original
@@ -206,7 +212,7 @@ describe JavaBuildpack::Util::Cache::DownloadCache do
 
     it 'uses HTTP_PROXY if specified' do
       stub_request(:get, uri)
-        .to_return(status: 200, body: 'foo-cached', headers: { Etag:           'foo-etag',
+        .to_return(status: 200, body: 'foo-cached', headers: { Etag: 'foo-etag',
                                                                'Last-Modified' => 'foo-last-modified' })
 
       allow(Net::HTTP).to receive(:Proxy).and_call_original
@@ -223,7 +229,7 @@ describe JavaBuildpack::Util::Cache::DownloadCache do
 
     it 'uses https_proxy if specified and URL is secure' do
       stub_request(:get, uri_secure)
-        .to_return(status: 200, body: 'foo-cached', headers: { Etag:           'foo-etag',
+        .to_return(status: 200, body: 'foo-cached', headers: { Etag: 'foo-etag',
                                                                'Last-Modified' => 'foo-last-modified' })
 
       allow(Net::HTTP).to receive(:Proxy).and_call_original
@@ -240,7 +246,7 @@ describe JavaBuildpack::Util::Cache::DownloadCache do
 
     it 'uses HTTPS_PROXY if specified and URL is secure' do
       stub_request(:get, uri_secure)
-        .to_return(status: 200, body: 'foo-cached', headers: { Etag:           'foo-etag',
+        .to_return(status: 200, body: 'foo-cached', headers: { Etag: 'foo-etag',
                                                                'Last-Modified' => 'foo-last-modified' })
 
       allow(Net::HTTP).to receive(:Proxy).and_call_original
@@ -256,7 +262,7 @@ describe JavaBuildpack::Util::Cache::DownloadCache do
 
     it 'does not use proxy if host in NO_PROXY' do
       stub_request(:get, uri_secure)
-        .to_return(status: 200, body: 'foo-cached', headers: { Etag:           'foo-etag',
+        .to_return(status: 200, body: 'foo-cached', headers: { Etag: 'foo-etag',
                                                                'Last-Modified' => 'foo-last-modified' })
 
       allow(Net::HTTP).to receive(:Proxy).and_call_original
@@ -272,7 +278,7 @@ describe JavaBuildpack::Util::Cache::DownloadCache do
 
     it 'does not use proxy if host in no_proxy' do
       stub_request(:get, uri_secure)
-        .to_return(status: 200, body: 'foo-cached', headers: { Etag:           'foo-etag',
+        .to_return(status: 200, body: 'foo-cached', headers: { Etag: 'foo-etag',
                                                                'Last-Modified' => 'foo-last-modified' })
 
       allow(Net::HTTP).to receive(:Proxy).and_call_original

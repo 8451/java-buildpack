@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
 # Copyright 2017 the original author or authors.
 #
@@ -21,14 +23,14 @@ require 'java_buildpack/jre/ibm_jre_initializer'
 require 'java_buildpack/jre/ibm_jre'
 
 describe JavaBuildpack::Jre::IbmJRE do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   let(:component) { StubIbmJRE.new context }
 
   let(:java_home) { JavaBuildpack::Component::MutableJavaHome.new }
 
   let(:configuration) do
-    { 'jre'           => jre_configuration,
+    { 'jre' => jre_configuration,
       'jvmkill_agent' => jvmkill_agent_configuration }
   end
 
@@ -37,7 +39,7 @@ describe JavaBuildpack::Jre::IbmJRE do
   let(:jvmkill_agent_configuration) { {} }
 
   it 'supports anyway' do
-    expect(component.supports?).to be
+    expect(component).to be_supports
   end
 
   it 'creates IbmJreInitializer instance' do
@@ -64,7 +66,7 @@ class StubIbmJRE < JavaBuildpack::Jre::IbmJRE
 end
 
 def sub_configuration_context(configuration)
-  cntxt                 = context.clone
+  cntxt = context.clone
   cntxt[:configuration] = configuration
   cntxt
 end

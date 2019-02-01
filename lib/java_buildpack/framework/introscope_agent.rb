@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2017 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,15 +34,19 @@ module JavaBuildpack
 
       # (see JavaBuildpack::Component::BaseComponent#release)
       def release
-        credentials = @application.services.find_service(FILTER)['credentials']
-        java_opts   = @droplet.java_opts
+        credentials = @application.services.find_service(FILTER, %w[agent_manager_url url])['credentials']
+        java_opts = @droplet.java_opts
 
         java_opts
           .add_javaagent(agent_jar)
           .add_system_property('com.wily.introscope.agentProfile', agent_profile)
           .add_system_property('introscope.agent.hostName', agent_host_name)
           .add_system_property('com.wily.introscope.agent.agentName', agent_name(credentials))
-          .add_system_property('introscope.agent.defaultProcessName', default_process_name)
+          .add_system_property('introscope.agent.defaultProcessName', default_process_name(credentials))
+
+        if agent_manager_credential(credentials)
+          java_opts.add_system_property('agentManager.credential', agent_manager_credential(credentials))
+        end
 
         add_url(credentials, java_opts)
       end
@@ -49,12 +55,12 @@ module JavaBuildpack
 
       # (see JavaBuildpack::Component::VersionedDependencyComponent#supports?)
       def supports?
-        @application.services.one_service? FILTER, 'url'
+        @application.services.one_service? FILTER, %w[agent_manager_url url]
       end
 
       private
 
-      FILTER = /introscope/
+      FILTER = /introscope/.freeze
 
       private_constant :FILTER
 
@@ -67,7 +73,7 @@ module JavaBuildpack
       end
 
       def add_url(credentials, java_opts)
-        agent_manager = url(credentials)
+        agent_manager = agent_manager_url(credentials)
 
         host, port, socket_factory = parse_url(agent_manager)
         java_opts.add_system_property('agentManager.url.1', agent_manager)
@@ -90,32 +96,36 @@ module JavaBuildpack
       end
 
       def agent_name(credentials)
-        credentials['agent-name'] || @configuration['default_agent_name']
+        credentials['agent_name'] || @configuration['default_agent_name']
       end
 
       def agent_profile
         @droplet.sandbox + 'core/config/IntroscopeAgent.profile'
       end
 
-      def default_process_name
-        @application.details['application_name']
+      def default_process_name(credentials)
+        credentials['agent_default_process_name'] || @application.details['application_name']
       end
 
       def protocol_mapping(protocol)
         socket_factory_base = 'com.wily.isengard.postofficehub.link.net.'
 
         protocol_socket_factory = {
-          ''      => socket_factory_base + 'DefaultSocketFactory',
-          'ssl'   => socket_factory_base + 'SSLSocketFactory',
-          'http'  => socket_factory_base + 'HttpTunnelingSocketFactory',
+          '' => socket_factory_base + 'DefaultSocketFactory',
+          'ssl' => socket_factory_base + 'SSLSocketFactory',
+          'http' => socket_factory_base + 'HttpTunnelingSocketFactory',
           'https' => socket_factory_base + 'HttpsTunnelingSocketFactory'
         }
 
         protocol_socket_factory[protocol] || protocol
       end
 
-      def url(credentials)
-        credentials['url']
+      def agent_manager_url(credentials)
+        credentials['agent_manager_url'] || credentials['url']
+      end
+
+      def agent_manager_credential(credentials)
+        credentials['agent_manager_credential'] || credentials['credential']
       end
     end
   end

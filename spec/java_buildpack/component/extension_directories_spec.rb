@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2017 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +20,7 @@ require 'droplet_helper'
 require 'java_buildpack/component/extension_directories'
 
 describe JavaBuildpack::Component::ExtensionDirectories do
-  include_context 'droplet_helper'
+  include_context 'with droplet help'
 
   context do
 
@@ -44,7 +46,7 @@ describe JavaBuildpack::Component::ExtensionDirectories do
 
   it 'renders empty string if path is empty' do
     extension_directories.clear
-    expect(extension_directories.as_paths).not_to be
+    expect(extension_directories.as_paths).not_to be_truthy
   end
 
 end

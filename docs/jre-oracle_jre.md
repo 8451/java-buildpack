@@ -85,7 +85,7 @@ Memory pool usage:
    PS Old Gen: init 43515904, used 247459792, committed 247463936, max 247463936
 ```
 
-If a heap dump [Volume Service][] is bound, terminal heap dumps will be written with the pattern `<CONTAINER_DIR>/<SPACE_NAME>-<SPACE_ID[0,8]>/<APPLICATION_NAME>-<APPLICATION_ID[0,8]>/<INSTANCE_INDEX>-<TIMESTAMP>-<INSTANCE_ID[0,8]>.hprof`
+If a [Volume Service][] with the string `heap-dump` in its name or tag is bound to the application, terminal heap dumps will be written with the pattern `<CONTAINER_DIR>/<SPACE_NAME>-<SPACE_ID[0,8]>/<APPLICATION_NAME>-<APPLICATION_ID[0,8]>/<INSTANCE_INDEX>-<TIMESTAMP>-<INSTANCE_ID[0,8]>.hprof`
 
 ```plain
 Heapdump written to /var/vcap/data/9ae0b817-1446-4915-9990-74c1bb26f147/pcfdev-space-e91c5c39/java-main-application-892f20ab/0-2017-06-13T18:31:29+0000-7b23124e.hprof
@@ -107,17 +107,6 @@ The user can change the container's total memory available to influence the JRE 
 Unless the user specifies the heap size Java option (`-Xmx`), increasing or decreasing the total memory
 available results in the heap size setting increasing or decreasing by a corresponding amount.
 
-#### Stack Threads
-
-The amount of memory that should be allocated to stacks is given as an amount of memory per
-thread with the Java option `-Xss`. If an explicit number of
-threads should be used for the calculation of stack memory, then it should be specified as in
-the following example:
-
-```yaml
-stack_threads: 500
-```
-
 #### Loaded Classes
 
 The amount of memory that is allocated to metaspace and compressed class space (or, on Java 7, the permanent generation) is calculated from an estimate of the number of classes that will be loaded. The default behaviour is to estimate the number of loaded classes as a fraction of the number of class files in the application.
@@ -126,6 +115,24 @@ If a specific number of loaded classes should be used for calculations, then it 
 ```yaml
 class_count: 500
 ```
+
+#### Headroom
+
+A percentage of the total memory allocated to the container to be left as headroom and excluded from the memory calculation.
+
+```yaml
+headroom: 10
+```
+
+#### Stack Threads
+
+The amount of memory that should be allocated to stacks is given as an amount of memory per thread with the Java option `-Xss`. If an explicit number of threads should be used for the calculation of stack memory, then it should be specified as in the following example:
+
+```yaml
+stack_threads: 500
+```
+
+Note that the default value of 250 threads is optimized for a default Tomcat configuration.  If you are using another container, especially something non-blocking like Netty, it's more appropriate to use a significantly smaller value.  Typically 25 threads would cover the needs of both the server (Netty) and the threads started by the JVM itself.
 
 #### Java Options
 

@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2017 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,10 +58,18 @@ module JavaBuildpack
       # @return [JavaOpts] the shared +JavaOpts+ instance for all components
       attr_reader :java_opts
 
+      # @!attribute [r] networking
+      # @return [Networking] the shared +Networking+ instance for all components
+      attr_reader :networking
+
       # @!attribute [r] root
       # @return [JavaBuildpack::Util::FilteringPathname] the root of the droplet's fileystem filtered so that it
       #                                                  excludes files in the sandboxes of other components
       attr_reader :root
+
+      # @!attribute [r] root_libraries
+      # @return [RootLibraries] the shared +RootLibraries+ instance for all components
+      attr_reader :root_libraries
 
       # @!attribute [r] sandbox
       # @return [Pathname] the root of the component's sandbox
@@ -83,10 +93,12 @@ module JavaBuildpack
       #                                                       be an instance of +MutableJavaHome+.  Otherwise it should
       #                                                       be an instance of +ImmutableJavaHome+.
       # @param [JavaOpts] java_opts                           the shared +JavaOpts+ instance for all components
+      # @param [Networking] networking                        the shared +Networking+ instance for all components
       # @param [Pathname] root                                the root of the droplet
+      # @param [RootLibraries] root_libraries                 the shared +RootLibraries+ instance for all components
       # @param [SecurityProviders] security_providers         the shared +SecurityProviders+ instance for all components
-      def initialize(additional_libraries, component_id, env_vars, extension_directories, java_home, java_opts, root,
-                     security_providers)
+      def initialize(additional_libraries, component_id, env_vars, extension_directories, java_home, java_opts,
+                     networking, root, root_libraries, security_providers)
 
         @additional_libraries  = additional_libraries
         @component_id          = component_id
@@ -110,6 +122,8 @@ module JavaBuildpack
           ->(path) { !in?(path, buildpack_root) || in?(path, @sandbox) },
           true
         )
+        @root_libraries     = root_libraries
+        @networking         = networking
         @security_providers = security_providers
       end
 
@@ -131,7 +145,7 @@ module JavaBuildpack
 
       private
 
-      RESOURCES_DIRECTORY = Pathname.new(File.expand_path('../../../../resources', __FILE__)).freeze
+      RESOURCES_DIRECTORY = Pathname.new(File.expand_path('../../../resources', __dir__)).freeze
 
       private_constant :RESOURCES_DIRECTORY
 

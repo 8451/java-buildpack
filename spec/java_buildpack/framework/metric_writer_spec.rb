@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2017 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +20,7 @@ require 'component_helper'
 require 'java_buildpack/framework/metric_writer'
 
 describe JavaBuildpack::Framework::MetricWriter do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   it 'does not detect without metric-forwarder service' do
     expect(component.detect).to be_nil
@@ -54,7 +56,7 @@ describe JavaBuildpack::Framework::MetricWriter do
        cache_fixture: 'stub-metric-writer.jar' do
 
       allow(services).to receive(:find_service).and_return('credentials' => { 'access_key' => 'test-access-key',
-                                                                              'endpoint'   => 'https://test-endpoint' })
+                                                                              'endpoint' => 'https://test-endpoint' })
 
       component.release
 
@@ -63,7 +65,7 @@ describe JavaBuildpack::Framework::MetricWriter do
 
     it 'updates JAVA_OPTS' do
       allow(services).to receive(:find_service).and_return('credentials' => { 'access_key' => 'test-access-key',
-                                                                              'endpoint'   => 'https://test-endpoint' })
+                                                                              'endpoint' => 'https://test-endpoint' })
 
       component.release
 
